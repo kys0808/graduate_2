@@ -30,6 +30,7 @@ import android.util.TypedValue;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -118,20 +119,22 @@ public class MultiBoxTracker {
   public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
     //logger.i("Processing %d results from %d", results.size(), timestamp);
     List<Recognition> tmp_results = new ArrayList<Recognition>();
-
+    logger.i("trackResults function invoked!");
     for(int i=0;i<results.size();i++){
       // 객체 탐지는 모두다 detection 되는 중, 따라서 person만 뽑아내기
       // 추후에 장애물 별 tmp_results 에 담기
 
       /*
       해야할 일 : 시간 cut 설정
-
        */
-      if(results.get(i).getTitle().equals("person") ||results.get(i).getTitle().equals("bicycle")
-              || results.get(i).getTitle().equals("motorcycle") ||results.get(i).getTitle().equals("bus")
-              || results.get(i).getTitle().equals("train") || results.get(i).getTitle().equals("truck")
-      ){
-        logger.i("push "+results.get(i).getTitle() +" "+ results.get(i).getConfidence().toString());
+      String title = results.get(i).getTitle();
+      String[] objects = {"person", "bicycle", "motorcycle", "bus", "train", "truck"};
+      ArrayList<String> objectList = new ArrayList<String>(Arrays.asList(objects));
+
+      float confidence = results.get(i).getConfidence();
+
+      if(objectList.indexOf(title) >= 0 && confidence > 0.5){
+        logger.i("push "+ title +" "+ results.get(i).getConfidence().toString());
         //if(results.get(i).getConfidence().toString()) // 확률 0.xxx 로 등장함
         tmp_results.add(results.get(i));
       }
