@@ -26,6 +26,7 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.Pair;
+import android.util.Size;
 import android.util.TypedValue;
 
 import java.lang.reflect.Array;
@@ -42,6 +43,26 @@ import org.tensorflow.lite.examples.detection.tflite.Detector.Recognition;
 
 /** A tracker that handles non-max suppression and matches existing objects to new detections. */
 public class MultiBoxTracker {
+
+  // 탐지할 객체 리스트
+  private static final String[] OBJECT_LIST = {
+    "person",
+    "bicycle",
+    "motorcycle",
+    "bus",
+    "train",
+    "truck"
+  };
+  private static final ArrayList<String> DETECT_OBJECT_LIST = new ArrayList<String>(Arrays.asList(OBJECT_LIST));
+
+  // 화면 구
+  private static final int BLOCK_SIZE = 3;
+  private static final String[][] BLOCK_NAMES = {
+    {"LT", "MT", "RT"},
+    {"LM", "MM", "RM"},
+    {"LB", "MB", "RB"}
+  };
+
   private static final float TEXT_SIZE_DIP = 18;
   private static final float MIN_SIZE = 16.0f;
   private static final int[] COLORS = {
@@ -117,31 +138,38 @@ public class MultiBoxTracker {
   }
 
   public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
-    //logger.i("Processing %d results from %d", results.size(), timestamp);
     List<Recognition> tmp_results = new ArrayList<Recognition>();
-    logger.i("trackResults function invoked!");
-    for(int i=0;i<results.size();i++){
-      // 객체 탐지는 모두다 detection 되는 중, 따라서 person만 뽑아내기
-      // 추후에 장애물 별 tmp_results 에 담기
 
-      /*
-      해야할 일 : 시간 cut 설정
-       */
+    for(int i = 0; i < results.size(); i++){
+      Recognition recog = results.get(i);
       String title = results.get(i).getTitle();
-      String[] objects = {"person", "bicycle", "motorcycle", "bus", "train", "truck"};
-      ArrayList<String> objectList = new ArrayList<String>(Arrays.asList(objects));
 
-      float confidence = results.get(i).getConfidence();
-
-      if(objectList.indexOf(title) >= 0 && confidence > 0.5){
-        logger.i("push "+ title +" "+ results.get(i).getConfidence().toString());
-        //if(results.get(i).getConfidence().toString()) // 확률 0.xxx 로 등장함
-        tmp_results.add(results.get(i));
+      if(DETECT_OBJECT_LIST.indexOf(title) >= 0){
+        tmp_results.add(recog);
       }
     }
     processResults(tmp_results);
-    //processResults(results);
 
+    // 이미지 처리
+    processDetectedObject(tmp_results);
+  }
+
+  private void processDetectedObject(List<Recognition> results) {
+    for(int i = 0; i < results.size(); i++) {
+      Recognition recog = results.get(i);
+      String title = results.get(i).getTitle();
+      float confidence = recog.getConfidence();
+      RectF location = recog.getLocation();
+
+      float centerPosX = (location.right + location.left) / 2;
+      float centerPosY = (location.top + location.bottom) / 2;
+
+      int xIndex = (int)Math.floor(centerPosX / (frameWidth / BLOCK_SIZE));
+      int yIndex = (int)Math.floor(centerPosY / (frameHeight / BLOCK_SIZE));
+
+      logger.i("push " + title + " " + confidence + " " + location);
+      logger.i(xIndex + " " + yIndex + " " + BLOCK_NAMES[BLOCK_SIZE - yIndex - 1][xIndex]);
+    }
   }
 
   private Matrix getFrameToCanvasMatrix() {
