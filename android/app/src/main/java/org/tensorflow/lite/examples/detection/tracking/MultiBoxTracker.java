@@ -165,6 +165,8 @@ public class MultiBoxTracker {
   }
 
   private void processDetectedObject(List<Recognition> results) {
+    if(results.size() == 0) return;
+
     for(int i = 0; i < results.size(); i++) {
       Recognition recog = results.get(i);
       String title = results.get(i).getTitle();
@@ -183,6 +185,7 @@ public class MultiBoxTracker {
     
     MediaPlayer mediaPlayer = MediaPlayer.create(this.context, R.raw.speech);
     mediaPlayer.start();
+    mediaPlayer.setOnCompletionListener(e -> e.release());
   }
 
 
