@@ -24,6 +24,10 @@ import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.Size;
@@ -35,6 +39,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import org.tensorflow.lite.examples.detection.R;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
@@ -93,8 +99,12 @@ public class MultiBoxTracker {
   private int frameWidth;
   private int frameHeight;
   private int sensorOrientation;
+  private Context context;
 
   public MultiBoxTracker(final Context context) {
+    // 추가
+    this.context = context;
+
     for (final int color : COLORS) {
       availableColors.add(color);
     }
@@ -170,7 +180,11 @@ public class MultiBoxTracker {
       logger.i("push " + title + " " + confidence + " " + location);
       logger.i(xIndex + " " + yIndex + " " + BLOCK_NAMES[BLOCK_SIZE - yIndex - 1][xIndex]);
     }
+    
+    MediaPlayer mediaPlayer = MediaPlayer.create(this.context, R.raw.speech);
+    mediaPlayer.start();
   }
+
 
   private Matrix getFrameToCanvasMatrix() {
     return frameToCanvasMatrix;
@@ -226,13 +240,13 @@ public class MultiBoxTracker {
       final RectF detectionScreenRect = new RectF();
       rgbFrameToScreen.mapRect(detectionScreenRect, detectionFrameRect);
 
-      logger.v(
-          "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
+      //logger.v(
+      //    "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
 
       screenRects.add(new Pair<Float, RectF>(result.getConfidence(), detectionScreenRect));
 
       if (detectionFrameRect.width() < MIN_SIZE || detectionFrameRect.height() < MIN_SIZE) {
-        logger.w("Degenerate rectangle! " + detectionFrameRect);
+        //logger.w("Degenerate rectangle! " + detectionFrameRect);
         continue;
       }
 
@@ -241,7 +255,7 @@ public class MultiBoxTracker {
 
     trackedObjects.clear();
     if (rectsToTrack.isEmpty()) {
-      logger.v("Nothing to track, aborting.");
+      //logger.v("Nothing to track, aborting.");
       return;
     }
 

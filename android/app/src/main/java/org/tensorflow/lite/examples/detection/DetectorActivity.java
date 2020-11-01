@@ -52,6 +52,7 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
   private static final int TF_OD_API_INPUT_SIZE = 300;
   private static final boolean TF_OD_API_IS_QUANTIZED = true;
   private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
+  //private static final String TF_OD_API_MODEL_FILE= "my_tflite.tflite";
 
   private static long prevDetectTime = 0;
   private static final int THROTTLEING_TIME = 1000;
