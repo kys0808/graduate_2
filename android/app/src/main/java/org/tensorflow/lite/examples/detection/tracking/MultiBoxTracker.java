@@ -24,6 +24,10 @@ import android.graphics.Paint.Cap;
 import android.graphics.Paint.Join;
 import android.graphics.Paint.Style;
 import android.graphics.RectF;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -33,6 +37,8 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+
+import org.tensorflow.lite.examples.detection.R;
 import org.tensorflow.lite.examples.detection.env.BorderedText;
 import org.tensorflow.lite.examples.detection.env.ImageUtils;
 import org.tensorflow.lite.examples.detection.env.Logger;
@@ -71,8 +77,12 @@ public class MultiBoxTracker {
   private int frameWidth;
   private int frameHeight;
   private int sensorOrientation;
+  private Context context;
 
   public MultiBoxTracker(final Context context) {
+    // 추가
+    this.context = context;
+
     for (final int color : COLORS) {
       availableColors.add(color);
     }
@@ -119,6 +129,7 @@ public class MultiBoxTracker {
     //logger.i("Processing %d results from %d", results.size(), timestamp);
     List<Recognition> tmp_results = new ArrayList<Recognition>();
 
+
     for(int i=0;i<results.size();i++){
       // 객체 탐지는 모두다 detection 되는 중, 따라서 person만 뽑아내기
       // 추후에 장애물 별 tmp_results 에 담기
@@ -127,19 +138,28 @@ public class MultiBoxTracker {
       해야할 일 : 시간 cut 설정
 
        */
+
       if(results.get(i).getTitle().equals("person") ||results.get(i).getTitle().equals("bicycle")
               || results.get(i).getTitle().equals("motorcycle") ||results.get(i).getTitle().equals("bus")
               || results.get(i).getTitle().equals("train") || results.get(i).getTitle().equals("truck")
+              || results.get(i).getTitle().equals("car")
       ){
-        logger.i("push "+results.get(i).getTitle() +" "+ results.get(i).getConfidence().toString());
+
+        logger.i("push "+results.get(i).getTitle() +" "+ results.get(i).getConfidence().toString() + " "+results.get(i).getLocation());
         //if(results.get(i).getConfidence().toString()) // 확률 0.xxx 로 등장함
         tmp_results.add(results.get(i));
       }
     }
     processResults(tmp_results);
-    //processResults(results);
 
+      MediaPlayer mediaPlayer = MediaPlayer.create(this.context, R.raw.speech);
+      mediaPlayer.start();
+      //mediaPlayer.stop();
+      //mediaPlayer.reset();
+      //mediaPlayer.release();
+    //processResults(results);
   }
+
 
   private Matrix getFrameToCanvasMatrix() {
     return frameToCanvasMatrix;
@@ -195,13 +215,13 @@ public class MultiBoxTracker {
       final RectF detectionScreenRect = new RectF();
       rgbFrameToScreen.mapRect(detectionScreenRect, detectionFrameRect);
 
-      logger.v(
-          "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
+      //logger.v(
+      //    "Result! Frame: " + result.getLocation() + " mapped to screen:" + detectionScreenRect);
 
       screenRects.add(new Pair<Float, RectF>(result.getConfidence(), detectionScreenRect));
 
       if (detectionFrameRect.width() < MIN_SIZE || detectionFrameRect.height() < MIN_SIZE) {
-        logger.w("Degenerate rectangle! " + detectionFrameRect);
+        //logger.w("Degenerate rectangle! " + detectionFrameRect);
         continue;
       }
 
@@ -210,7 +230,7 @@ public class MultiBoxTracker {
 
     trackedObjects.clear();
     if (rectsToTrack.isEmpty()) {
-      logger.v("Nothing to track, aborting.");
+      //logger.v("Nothing to track, aborting.");
       return;
     }
 
