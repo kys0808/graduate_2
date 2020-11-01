@@ -48,12 +48,14 @@ import org.tensorflow.lite.examples.detection.tracking.MultiBoxTracker;
  */
 public class DetectorActivity extends CameraActivity implements OnImageAvailableListener {
   private static final Logger LOGGER = new Logger();
-
   // Configuration values for the prepackaged SSD model.
   private static final int TF_OD_API_INPUT_SIZE = 300;
   private static final boolean TF_OD_API_IS_QUANTIZED = true;
   private static final String TF_OD_API_MODEL_FILE = "detect.tflite";
   //private static final String TF_OD_API_MODEL_FILE= "my_tflite.tflite";
+
+  private static long prevDetectTime = 0;
+  private static final int THROTTLEING_TIME = 1000;
 
 
   private static final String TF_OD_API_LABELS_FILE = "labelmap.txt";
@@ -214,7 +216,10 @@ public class DetectorActivity extends CameraActivity implements OnImageAvailable
               }
             }
 
-            tracker.trackResults(mappedRecognitions, currTimestamp);
+            if(prevDetectTime + THROTTLEING_TIME < startTime ) {
+              tracker.trackResults(mappedRecognitions, currTimestamp);
+              prevDetectTime =  startTime;
+            }
 
             trackingOverlay.postInvalidate();
 

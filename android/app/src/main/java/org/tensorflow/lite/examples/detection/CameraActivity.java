@@ -233,6 +233,8 @@ public abstract class CameraActivity extends AppCompatActivity
   /** Callback for Camera2 API */
   @Override
   public void onImageAvailable(final ImageReader reader) {
+
+
     // We need wait until we have some size from onPreviewSizeChosen
     if (previewWidth == 0 || previewHeight == 0) {
       return;
