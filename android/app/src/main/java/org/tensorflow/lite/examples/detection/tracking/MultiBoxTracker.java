@@ -26,6 +26,7 @@ import android.graphics.Paint.Style;
 import android.graphics.RectF;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.text.TextUtils;
@@ -33,9 +34,12 @@ import android.util.Pair;
 import android.util.Size;
 import android.util.TypedValue;
 
+import androidx.annotation.RequiresApi;
+
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -147,6 +151,7 @@ public class MultiBoxTracker {
     }
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.N)
   public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
     List<Recognition> tmp_results = new ArrayList<Recognition>();
 
@@ -164,8 +169,10 @@ public class MultiBoxTracker {
     processDetectedObject(tmp_results);
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.N)
   private void processDetectedObject(List<Recognition> results) {
     if(results.size() == 0) return;
+    HashMap<String, Integer> objectCounter = new HashMap<>();
 
     for(int i = 0; i < results.size(); i++) {
       Recognition recog = results.get(i);
@@ -179,9 +186,14 @@ public class MultiBoxTracker {
       int xIndex = (int)Math.floor(centerPosX / (frameWidth / BLOCK_SIZE));
       int yIndex = (int)Math.floor(centerPosY / (frameHeight / BLOCK_SIZE));
 
+      int objectCount = objectCounter.getOrDefault(title, 0);
+      objectCounter.put(title, objectCount + 1);
+
       logger.i("push " + title + " " + confidence + " " + location);
       logger.i(xIndex + " " + yIndex + " " + BLOCK_NAMES[BLOCK_SIZE - yIndex - 1][xIndex]);
     }
+
+    logger.i(objectCounter.toString());
     
     MediaPlayer mediaPlayer = MediaPlayer.create(this.context, R.raw.speech);
     mediaPlayer.start();
