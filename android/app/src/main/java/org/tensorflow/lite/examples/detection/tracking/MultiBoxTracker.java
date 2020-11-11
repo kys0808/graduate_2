@@ -64,8 +64,9 @@ public class MultiBoxTracker {
     "truck"
   };
   private static final ArrayList<String> DETECT_OBJECT_LIST = new ArrayList<String>(Arrays.asList(OBJECT_LIST));
+  public static boolean isSpeeching = false;
 
-  // 화면 구
+  // 화면 구획
   private static final int BLOCK_SIZE = 3;
   private static final String[][] BLOCK_NAMES = {
     {"LT", "MT", "RT"},
@@ -104,10 +105,12 @@ public class MultiBoxTracker {
   private int frameHeight;
   private int sensorOrientation;
   private Context context;
+  private static MediaPlayer mediaPlayer;
 
   public MultiBoxTracker(final Context context) {
     // 추가
     this.context = context;
+    this.mediaPlayer = MediaPlayer.create(context, R.raw.speech);
 
     for (final int color : COLORS) {
       availableColors.add(color);
@@ -172,7 +175,10 @@ public class MultiBoxTracker {
   @RequiresApi(api = Build.VERSION_CODES.N)
   private void processDetectedObject(List<Recognition> results) {
     if(results.size() == 0) return;
-    HashMap<String, Integer> objectCounter = new HashMap<>();
+    HashMap<String, ArrayList<String>> objectCounter = new HashMap<>();
+
+    String maxTitle = "";
+    int maxCount = 0;
 
     for(int i = 0; i < results.size(); i++) {
       Recognition recog = results.get(i);
@@ -186,18 +192,30 @@ public class MultiBoxTracker {
       int xIndex = (int)Math.floor(centerPosX / (frameWidth / BLOCK_SIZE));
       int yIndex = (int)Math.floor(centerPosY / (frameHeight / BLOCK_SIZE));
 
-      int objectCount = objectCounter.getOrDefault(title, 0);
-      objectCounter.put(title, objectCount + 1);
+      ArrayList<String> postionList = objectCounter.getOrDefault(title, new ArrayList<>());
+      postionList.add(BLOCK_NAMES[xIndex][BLOCK_SIZE - yIndex - 1]);
+      if(postionList.size() > maxCount) {
+        maxCount = postionList.size();
+        maxTitle = title;
+      }
+
+      objectCounter.put(title, postionList);
 
       logger.i("push " + title + " " + confidence + " " + location);
-      logger.i(xIndex + " " + yIndex + " " + BLOCK_NAMES[BLOCK_SIZE - yIndex - 1][xIndex]);
+      logger.i("max" + maxTitle + maxCount);
     }
+    // 2명 이하는 송출x
+    if(isSpeeching || maxCount < 2) return;
 
-    logger.i(objectCounter.toString());
-    
-    MediaPlayer mediaPlayer = MediaPlayer.create(this.context, R.raw.speech);
-    mediaPlayer.start();
-    mediaPlayer.setOnCompletionListener(e -> e.release());
+    this.isSpeeching = true;
+
+    this.mediaPlayer.start();
+    this.mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+      @Override
+      public void onCompletion(MediaPlayer mp) {
+        MultiBoxTracker.isSpeeching = false;
+      }
+    });
   }
 
 
